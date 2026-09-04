@@ -1,2 +1,2 @@
-print("Python Automation Engineering Lab")
+print("Python AI Automation Engineering Lab")
 print("Feature branch practice")
