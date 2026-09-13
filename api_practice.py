@@ -1,6 +1,7 @@
 import json
 import requests
-
+from timedate_practice import get_activity_status
+from datetime import datetime, timezone
 
 def clean_repository(repo):
     clean_repo = {
@@ -8,6 +9,7 @@ def clean_repository(repo):
         "language" : repo['language'] or "Unknown",
         "html_url" : repo['html_url'],
         "pushed_at" : repo['pushed_at'],
+        "activity_status": get_activity_status(repo["pushed_at"]),
          "open_issues_count": repo["open_issues_count"],
         "forks_count" : repo ['forks_count'],
         "stargazers_count" : repo['stargazers_count']
