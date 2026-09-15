@@ -33,6 +33,23 @@ def fetch_repositories(username):
     return response.json()
 
 
+def summarize_repositories(repositories):
+    total_repositories = len(repositories)
+    active_repositories = 0
+    stale_repositories = 0
+    for repo in repositories:
+        if repo['activity_status'] == "Active":
+            active_repositories += 1
+        else:
+            stale_repositories += 1
+    return {
+            "total_repositories": total_repositories,
+            "active_repositoiers": active_repositories,
+            "stale_repositoiers": stale_repositories
+            }
+    
+
+
 def save_report(repositories, filename):
     with open(filename, "w", encoding="utf-8") as file:
         json.dump(repositories, file, indent=4)

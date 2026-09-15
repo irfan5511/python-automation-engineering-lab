@@ -1,7 +1,9 @@
 import os
 from dotenv import load_dotenv
 import requests
-from api_practice import  clean_all_repositories, save_report
+from api_practice import  clean_all_repositories, save_report, summarize_repositories
+from datetime import datetime, timezone
+from retry_practice import get_with_retry
 load_dotenv()
 
 
@@ -11,18 +13,42 @@ def fetch_repositories(token):
         "Authorization": f"Bearer {token}",
         "Accept": "application/vnd.github+json"
     }
-    params = {
-        "sort": "updated",
-        "per_page": 5
-    }
-    response = requests.get(
-        url,
-        headers= headers,
-        params= params,
-        timeout= 10
+    page = 1
+    all_repositories = []
+    while True:
+        params = {
+            "sort": "updated",
+            "per_page": 5,
+            "page": page
+        }
+        
+        response = get_with_retry(
+            url,
+            headers= headers,
+            params= params,
+            timeout= 10,
+            max_attempts=3
+            )
+        reset_timestamp = response.headers.get("x-ratelimit-reset")
+        reset_time = datetime.fromtimestamp(
+            int(reset_timestamp),
+            tz= timezone.utc
         )
-    response.raise_for_status()
-    return response.json()
+        print(f"reset_time: {reset_time}")
+
+        remaining = int(response.headers.get("x-ratelimit-remaining"))
+        if remaining <= 100:
+            print(f"Warning: only {remaining} API requests remaining")
+        
+
+        page_data= response.json()
+        if not page_data:
+                break
+        all_repositories.extend(page_data)
+        page += 1
+    return all_repositories
+
+    
 
 
 def main():
@@ -38,12 +64,18 @@ def main():
 
     try:
         data= fetch_repositories(token)
+        print(f"Repositories returned: {len(data)}")
         if not data:
             print("No repositories found")
         else:
             cleaned_repositories= clean_all_repositories(data)
+            summary = summarize_repositories(cleaned_repositories)
+            report = {
+                "summary": summary,
+                "repositories": cleaned_repositories
+            }
             save_report(
-                cleaned_repositories,
+                report,
                 "data/github_irfan_repositories.json")
             print("Repository report saved successfully")
 
