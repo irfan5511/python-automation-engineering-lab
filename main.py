@@ -4,7 +4,12 @@ import requests
 from api_practice import  clean_all_repositories, save_report, summarize_repositories
 from datetime import datetime, timezone
 from retry_practice import get_with_retry
+import logging
 load_dotenv()
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(message)s"
+)
 
 
 def fetch_repositories(token):
@@ -34,11 +39,12 @@ def fetch_repositories(token):
             int(reset_timestamp),
             tz= timezone.utc
         )
-        print(f"reset_time: {reset_time}")
+        logging.info(f"Rate limit resets: {reset_time}")
 
         remaining = int(response.headers.get("x-ratelimit-remaining"))
         if remaining <= 100:
-            print(f"Warning: only {remaining} API requests remaining")
+            logging.warning(
+                f"Only {remaining} API requests remaining")
         
 
         page_data= response.json()
@@ -55,18 +61,18 @@ def main():
 
     token = os.getenv("GITHUB_TOKEN")
     if not token:
-        print("Missing GitHub token")
+        logging.error("Missing GitHub token")
         return
 
     
-    print("GitHub token loaded successfully")
+    logging.info("GitHub token loaded successfully")
 
 
     try:
         data= fetch_repositories(token)
-        print(f"Repositories returned: {len(data)}")
+        logging.info(f"Repositories returned: {len(data)}")
         if not data:
-            print("No repositories found")
+            logging.warning("No repositories found")
         else:
             cleaned_repositories= clean_all_repositories(data)
             summary = summarize_repositories(cleaned_repositories)
@@ -77,20 +83,20 @@ def main():
             save_report(
                 report,
                 "data/github_irfan_repositories.json")
-            print("Repository report saved successfully")
+            logging.info("Repository report saved successfully")
 
 
     except requests.HTTPError as error: 
-        print(f"HTTP error: {error}")
+        logging.error(f"HTTP error: {error}")
 
     except requests.Timeout as error:  
-        print(f"Request timed out: {error}")
+        logging.error(f"Request timed out: {error}")
 
     except requests.ConnectionError as error:
-        print(f"Connection error: {error}")
+        logging.error(f"Connection error: {error}")
 
     except requests.RequestException as error:
-        print(f"Request failed: {error}")
+        logging.error(f"Request failed: {error}")
 
 
 if __name__ == "__main__":

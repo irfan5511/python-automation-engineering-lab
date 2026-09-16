@@ -1,5 +1,6 @@
 import time
 import requests
+import logging
 
 
 def get_with_retry(url, headers=None, params=None, timeout=10, max_attempts=3):
@@ -14,24 +15,24 @@ def get_with_retry(url, headers=None, params=None, timeout=10, max_attempts=3):
             ) 
             response.raise_for_status()
 
-            print("Request succeeded")
+            logging.info("Request succeeded")
             return response
 
         except (requests.Timeout, requests.ConnectionError) as error:
-            print(f"Attempt {attempt} failed {error}")
+            logging.warning(f"Attempt {attempt} failed {error}")
             if attempt < max_attempts:
                 wait_time = 2 ** (attempt - 1)
-                print(f"Retrying in {wait_time} seconds...")
+                logging.info(f"Retrying in {wait_time} seconds...")
                 time.sleep(wait_time)
             else:
                 raise
         except requests.HTTPError as error:
             status_code = error.response.status_code
-            print(f"Attempt {attempt} failed with HTTP {status_code}")
+            logging.warning(f"Attempt {attempt} failed with HTTP {status_code}")
             if status_code in [429, 500, 502, 503, 504]:
                 if attempt < max_attempts:
                     wait_time = 2 ** (attempt - 1)
-                    print(f"Retrying in {wait_time} seconds...")
+                    logging.info(f"Retrying in {wait_time} seconds...")
                     time.sleep(wait_time)
                 else:
                     raise
