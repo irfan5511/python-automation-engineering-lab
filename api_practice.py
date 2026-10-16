@@ -44,8 +44,8 @@ def summarize_repositories(repositories):
             stale_repositories += 1
     return {
             "total_repositories": total_repositories,
-            "active_repositoiers": active_repositories,
-            "stale_repositoiers": stale_repositories
+            "active_repositories": active_repositories,
+            "stale_repositories": stale_repositories
             }
     
 
